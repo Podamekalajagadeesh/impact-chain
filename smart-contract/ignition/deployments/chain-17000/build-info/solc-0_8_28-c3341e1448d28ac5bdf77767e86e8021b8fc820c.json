@@ -1,0 +1,39 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_28-c3341e1448d28ac5bdf77767e86e8021b8fc820c",
+  "solcVersion": "0.8.28",
+  "solcLongVersion": "0.8.28+commit.7893614a",
+  "userSourceNameMap": {
+    "contracts/ImpactChain.sol": "project/contracts/ImpactChain.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "cancun",
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode",
+            "evm.deployedBytecode",
+            "evm.methodIdentifiers",
+            "metadata"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/ImpactChain.sol": {
+        "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.20;\n\ncontract ImpactChain {\n    struct Donation {\n        address donor;\n        uint256 amount;\n        uint256 timestamp;\n        bool isAnonymous;\n    }\n\n    struct ImpactReport {\n        address reporter;\n        string description;\n        string imageUrl;\n        uint256 timestamp;\n        uint256 upvotes;\n        uint256 downvotes;\n        bool verified;\n        bool aiVerified;\n    }\n\n    Donation[] public donations;\n    ImpactReport[] public impactReports;\n    \n    // Track who voted on which report\n    mapping(uint256 => mapping(address => bool)) public hasVoted;\n    \n    // Track total donations\n    uint256 public totalDonations;\n\n    event DonationReceived(address indexed donor, uint256 amount, bool isAnonymous);\n    event ImpactReported(address indexed reporter, uint256 reportId, string description);\n    event ReportVoted(uint256 indexed reportId, address indexed voter, bool isUpvote);\n    event ReportVerified(uint256 indexed reportId, bool verified, bool aiVerified);\n\n    function donate(bool _isAnonymous) public payable {\n        require(msg.value > 0, \"Donation must be greater than zero\");\n        donations.push(Donation(\n            _isAnonymous ? address(0) : msg.sender, \n            msg.value, \n            block.timestamp,\n            _isAnonymous\n        ));\n        totalDonations += msg.value;\n        emit DonationReceived(msg.sender, msg.value, _isAnonymous);\n    }\n\n    function reportImpact(string memory _description, string memory _imageUrl) public {\n        uint256 reportId = impactReports.length;\n        impactReports.push(ImpactReport(\n            msg.sender, \n            _description, \n            _imageUrl, \n            block.timestamp, \n            0, \n            0,\n            false,\n            false\n        ));\n        emit ImpactReported(msg.sender, reportId, _description);\n    }\n\n    function voteOnReport(uint256 _reportId, bool _isUpvote) public {\n        require(_reportId < impactReports.length, \"Report does not exist\");\n        require(!hasVoted[_reportId][msg.sender], \"Already voted on this report\");\n        \n        hasVoted[_reportId][msg.sender] = true;\n        \n        if (_isUpvote) {\n            impactReports[_reportId].upvotes++;\n        } else {\n            impactReports[_reportId].downvotes++;\n        }\n        \n        emit ReportVoted(_reportId, msg.sender, _isUpvote);\n    }\n\n    function verifyReport(uint256 _reportId, bool _verified, bool _aiVerified) public {\n        require(_reportId < impactReports.length, \"Report does not exist\");\n        impactReports[_reportId].verified = _verified;\n        impactReports[_reportId].aiVerified = _aiVerified;\n        emit ReportVerified(_reportId, _verified, _aiVerified);\n    }\n\n    function getDonations() public view returns (Donation[] memory) {\n        return donations;\n    }\n\n    function getImpactReports() public view returns (ImpactReport[] memory) {\n        return impactReports;\n    }\n\n    function getImpactReport(uint256 _reportId) public view returns (ImpactReport memory) {\n        require(_reportId < impactReports.length, \"Report does not exist\");\n        return impactReports[_reportId];\n    }\n\n    function getTotalDonations() public view returns (uint256) {\n        return totalDonations;\n    }\n\n    function getReportCount() public view returns (uint256) {\n        return impactReports.length;\n    }\n}"
+      }
+    }
+  }
+}
